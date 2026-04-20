@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bank Management System</title>
+<style>
+/* ── reset + base ───────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy: #0f2447; --navy2: #162d5a; --blue: #1a6fff; --blue2: #3d83ff;
+  --teal: #00b89c; --red: #e53935; --orange: #f57c00; --gold: #f5a623;
+  --bg: #f0f4f8; --white: #fff; --surface: #fff; --border: #dde5f0;
+  --text: #1a2233; --text2: #4a5872; --text3: #8a9bb5;
+  --sidebar-w: 220px; --topbar-h: 58px;
+  --success: #00b89c; --danger: #e53935;
+  --radius: 10px; --shadow: 0 2px 12px rgba(15,36,71,.08);
+}
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg);
+       color: var(--text); font-size: 14px; line-height: 1.5; }
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+h1,h2,h3,h4 { font-weight: 600; }
+
+/* ── login ────────────────────────────────────────────────── */
+#login-screen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0f2447 0%, #1a6fff 100%);
+}
+.login-box {
+  background: var(--white); border-radius: 18px; padding: 44px 40px;
+  width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; justify-content: center; }
+.login-logo .logo-icon { width: 42px; height: 42px; background: var(--blue);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; }
+.login-logo span { font-size: 20px; font-weight: 700; color: var(--navy); }
+.login-box h2 { font-size: 22px; margin-bottom: 6px; text-align: center; color: var(--navy); }
+.login-box p { text-align: center; color: var(--text2); margin-bottom: 28px; font-size: 13px; }
+.demo-hint { background: #eef4ff; border: 1px solid #c4d9ff; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 20px; font-size: 12px; color: var(--navy2); }
+.demo-hint code { font-weight: 700; }
+
+/* ── form elements ─────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; }
+input, select, textarea {
+  border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px;
+  font-size: 14px; color: var(--text); background: var(--white); outline: none; transition: .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,111,255,.12); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media(max-width:600px){ .form-row { grid-template-columns: 1fr; } }
+
+/* ── buttons ──────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px;
+  border-radius: 8px; font-size: 13px; font-weight: 600; border: none; transition: .15s; }
+.btn-primary   { background: var(--blue);  color: #fff; }
+.btn-primary:hover  { background: var(--blue2); }
+.btn-success   { background: var(--teal);  color: #fff; }
+.btn-success:hover  { opacity: .9; }
+.btn-danger    { background: var(--red);   color: #fff; }
+.btn-danger:hover   { opacity: .9; }
+.btn-ghost     { background: var(--bg);    color: var(--text2); border: 1px solid var(--border); }
+.btn-ghost:hover    { background: var(--border); }
+.btn-sm  { padding: 6px 12px; font-size: 12px; }
+.btn-full { width: 100%; justify-content: center; padding: 11px; font-size: 15px; }
+
+/* ── app shell ────────────────────────────────────────────── */
+#app { display: none; min-height: 100vh; }
+
+/* topbar */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
+  background: var(--navy); color: #fff; display: flex; align-items: center;
+  padding: 0 20px; gap: 16px; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px;
+  width: var(--sidebar-w); flex-shrink: 0; }
+.topbar-brand .ti { width: 30px; height: 30px; background: var(--blue); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.topbar-user { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--blue2);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+.topbar-page-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.85); }
+
+/* sidebar */
+.sidebar {
+  position: fixed; top: var(--topbar-h); left: 0; bottom: 0;
+  width: var(--sidebar-w); background: var(--navy2); overflow-y: auto;
+  z-index: 90; padding: 16px 8px; display: flex; flex-direction: column;
+}
+.nav-section { font-size: 10px; font-weight: 700; color: rgba(255,255,255,.35);
+  text-transform: uppercase; letter-spacing: .08em; padding: 10px 10px 4px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 8px; cursor: pointer; color: rgba(255,255,255,.7);
+  font-size: 13px; font-weight: 500; transition: .15s; margin-bottom: 2px; }
+.nav-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-item.active { background: var(--blue); color: #fff; }
+.nav-item .ni { width: 18px; text-align: center; font-size: 16px; }
+.nav-logout { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.1); }
+
+/* main content */
+.main { margin-top: var(--topbar-h); margin-left: var(--sidebar-w); padding: 28px; }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.page-title { font-size: 22px; font-weight: 700; color: var(--navy); }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+
+/* ── stat cards ──────────────────────────────────────────── */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--white); border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow); border: 1px solid var(--border); position: relative; overflow: hidden; }
+.stat-card::after { content:''; position: absolute; top:-10px; right:-10px; width: 70px; height: 70px;
+  border-radius: 50%; opacity: .07; }
+.stat-card.blue::after  { background: var(--blue);  }
+.stat-card.teal::after  { background: var(--teal);  }
+.stat-card.gold::after  { background: var(--gold);  }
+.stat-card.red::after   { background: var(--red);   }
+.stat-label { font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.stat-val { font-size: 28px; font-weight: 700; }
+.stat-val.blue  { color: var(--blue);  }
+.stat-val.teal  { color: var(--teal);  }
+.stat-val.gold  { color: var(--orange);}
+.stat-val.red   { color: var(--red);   }
+.stat-icon { position: absolute; top: 16px; right: 16px; font-size: 22px; opacity: .25; }
+
+/* ── panels / cards ──────────────────────────────────────── */
+.panel { background: var(--white); border-radius: var(--radius); padding: 22px;
+  box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.panel-title { font-size: 15px; font-weight: 700; color: var(--navy); }
+.dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:900px){ .dash-grid { grid-template-columns: 1fr; } }
+
+/* ── tables ──────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: #f5f8ff; color: var(--navy); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; padding: 10px 14px; text-align: left;
+  border-bottom: 2px solid var(--border); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: .1s; }
+tbody tr:hover { background: #f9fbff; }
+tbody tr:last-child { border-bottom: none; }
+tbody td { padding: 10px 14px; color: var(--text2); }
+tbody td:first-child { color: var(--text); font-weight: 500; }
+
+/* ── badges ──────────────────────────────────────────────── */
+.badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; }
+.badge-green  { background: #e8f8f5; color: #00966e; }
+.badge-blue   { background: #eef4ff; color: #1a6fff; }
+.badge-red    { background: #ffeaea; color: #c62828; }
+.badge-gold   { background: #fff8e1; color: #e65100; }
+.badge-gray   { background: #f0f4f8; color: #4a5872; }
+
+/* ── modals ──────────────────────────────────────────────── */
+.modal-overlay { display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--white); border-radius: 14px; padding: 28px;
+  width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.modal-title { font-size: 17px; font-weight: 700; color: var(--navy); }
+.modal-close { background: none; border: none; font-size: 20px; color: var(--text2);
+  cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex;
+  align-items: center; justify-content: center; transition: .1s; }
+.modal-close:hover { background: var(--bg); }
+
+/* ── alerts / toast ──────────────────────────────────────── */
+.alert { padding: 11px 16px; border-radius: 8px; font-size: 13px;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.alert-success { background: #e8f8f5; border: 1px solid #b2dfdb; color: #00695c; }
+.alert-error   { background: #ffeaea; border: 1px solid #ffcdd2; color: #c62828; }
+.toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 10px;
+  font-size: 13px; max-width: 320px; display: flex; align-items: center; gap: 8px;
+  animation: slideUp .25s ease; box-shadow: 0 4px 20px rgba(0,0,0,.2); }
+.toast.ok  { border-left: 4px solid var(--teal); }
+.toast.err { border-left: 4px solid var(--red); }
+@keyframes slideUp { from{ opacity:0; transform:translateY(20px) } to{ opacity:1; transform:none } }
+
+/* ── search bar ──────────────────────────────────────────── */
+.search-bar { display: flex; align-items: center; gap: 8px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 16px; }
+.search-bar input { background: none; border: none; outline: none; flex: 1; font-size: 14px; color: var(--text); }
+
+/* ── transaction tabs ────────────────────────────────────── */
+.txn-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg);
+  border-radius: 10px; padding: 4px; }
+.txn-tab { flex: 1; padding: 9px; border: none; border-radius: 8px; font-size: 13px;
+  font-weight: 600; cursor: pointer; color: var(--text2); background: none; transition: .15s; }
+.txn-tab.active { background: var(--white); color: var(--blue); box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
+/* ── empty state ─────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text3); }
+.empty-state .ei { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ── loan card ───────────────────────────────────────────── */
+.loan-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 16px; }
+.loan-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; box-shadow: var(--shadow); }
+.loan-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.loan-name { font-size: 15px; font-weight: 700; color: var(--navy); }
+.loan-type-badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  background: #eef4ff; color: var(--blue); }
+.loan-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; }
+.loan-meta-item label { display: block; color: var(--text3); margin-bottom: 2px; }
+.loan-meta-item span { font-weight: 700; color: var(--text); }
+.loan-progress { margin-top: 12px; }
+.progress-bar { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--teal)); border-radius: 3px; }
+
+/* ── misc ────────────────────────────────────────────────── */
+.txn-credit { color: var(--teal); font-weight: 700; }
+.txn-debit  { color: var(--red);  font-weight: 700; }
+.loading { text-align: center; padding: 30px; color: var(--text3); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ════════════════════════════════════════════════ -->
+<div id="login-screen">
+<div class="login-box">
+  <div class="login-logo">
+    <div class="logo-icon">🏦</div>
+    <span>BankMS</span>
+  </div>
+  <h2>Welcome Back</h2>
+  <p>Sign in to manage the banking system</p>
+  <div class="demo-hint">
+    Demo → Username: <code>admin</code> &nbsp;|&nbsp; Password: <code>admin123</code>
+  </div>
+  <div id="login-err" style="display:none"></div>
+  <div class="form-group">
+    <label>Username</label>
+    <input id="li-user" type="text" placeholder="admin" value="admin" />
+  </div>
+  <div class="form-group">
+    <label>Password</label>
+    <input id="li-pass" type="password" placeholder="admin123" value="admin123" />
+  </div>
+  <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In</button>
+</div>
+</div>
+
+<!-- ══ APP ══════════════════════════════════════════════════ -->
+<div id="app">
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="ti">🏦</div>
+    BankMS
+  </div>
+  <span class="topbar-page-title" id="topbar-title">Dashboard</span>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div class="avatar" id="admin-initials">AD</div>
+      <span id="admin-name">Admin</span>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+    <span class="ni">📊</span> Dashboard
+  </div>
+  <div class="nav-item" data-page="customers" onclick="navigate('customers')">
+    <span class="ni">👥</span> Customers
+  </div>
+  <div class="nav-item" data-page="accounts" onclick="navigate('accounts')">
+    <span class="ni">🏦</span> Accounts
+  </div>
+  <div class="nav-item" data-page="transactions" onclick="navigate('transactions')">
+    <span class="ni">💸</span> Transactions
+  </div>
+  <div class="nav-item" data-page="loans" onclick="navigate('loans')">
+    <span class="ni">💼</span> Loans
+  </div>
+  <div class="nav-section">System</div>
+  <div class="nav-item" data-page="employees" onclick="navigate('employees')">
+    <span class="ni">👔</span> Employees
+  </div>
+  <div class="nav-logout">
+    <div class="nav-item" onclick="doLogout()">
+      <span class="ni">🚪</span> Logout
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<!-- ── DASHBOARD ─────────────────────────────────────── -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="dash-date"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card blue"><div class="stat-label">Total Customers</div><div class="stat-val blue" id="s-customers">—</div><div class="stat-icon">👥</div></div>
+    <div class="stat-card teal"><div class="stat-label">Active Accounts</div><div class="stat-val teal" id="s-accounts">—</div><div class="stat-icon">🏦</div></div>
+    <div class="stat-card gold"><div class="stat-label">Total Balance</div><div class="stat-val gold" id="s-balance">—</div><div class="stat-icon">💰</div></div>
+    <div class="stat-card red"><div class="stat-label">Active Loans</div><div class="stat-val red" id="s-loans">—</div><div class="stat-icon">💼</div></div>
+  </div>
+  <!-- Quick actions -->
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-title" style="margin-bottom:14px">⚡ Quick Actions</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="openTxnModal('Deposit')">＋ Deposit</button>
+      <button class="btn btn-ghost"   onclick="openTxnModal('Withdrawal')">－ Withdraw</button>
+      <button class="btn btn-primary" onclick="openTxnModal('Transfer')">⇄ Transfer</button>
+      <button class="btn btn-ghost"   onclick="navigate('customers');openCustomerModal()">＋ New Customer</button>
+    </div>
+  </div>
+  <div class="dash-grid">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Recent Transactions</span><a onclick="navigate('transactions')" style="font-size:12px;color:var(--blue);cursor:pointer">View all →</a></div>
+      <div class="table-wrap" id="recent-txns"><div class="loading">Loading…</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Today's Activity</span></div>
+      <div id="dash-activity"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CUSTOMERS ─────────────────────────────────────── -->
+<div id="page-customers" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Customers</div><div class="page-sub" id="cust-count"></div></div>
+    <button class="btn btn-primary" onclick="openCustomerModal()">＋ Add Customer</button>
+  </div>
+  <div class="search-bar">
+    <span>🔍</span>
+    <input id="cust-search" placeholder="Search by name, email or phone…" oninput="searchCustomers(this.value)" />
+  </div>
+  <div class="panel" style="padding:0">
+    <div class="table-wrap" id="cust-table"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ── ACCOUNTS ──────────────────────────────────────── -->
+<div id="page-accounts" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Accounts</div><div class="page-sub" id="acc-count"></div></div>
+    <button class="btn btn-primary" onclick="openAccountModal()">＋ Open Account</button>
+  </div>
+  <div class="search-bar">
+    <span>🔍</span>
+    <input id="acc-search" placeholder="Search by customer name or account ID…" oninput="searchAccounts(this.value)" />
+  </div>
+  <div class="panel" style="padding:0">
+    <div class="table-wrap" id="acc-table"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ── TRANSACTIONS ──────────────────────────────────── -->
+<div id="page-transactions" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Transactions</div><div class="page-sub">Full transaction log</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-success btn-sm" onclick="openTxnModal('Deposit')">Deposit</button>
+      <button class="btn btn-ghost btn-sm"   onclick="openTxnModal('Withdrawal')">Withdraw</button>
+      <button class="btn btn-primary btn-sm" onclick="openTxnModal('Transfer')">Transfer</button>
+    </div>
+  </div>
+  <div class="panel" style="padding:0">
+    <div class="table-wrap" id="txn-table"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<!-- ── LOANS ─────────────────────────────────────────── -->
+<div id="page-loans" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Loans</div><div class="page-sub" id="loan-count"></div></div>
+    <button class="btn btn-primary" onclick="openLoanModal()">＋ Add Loan</button>
+  </div>
+  <div id="loan-cards"><div class="loading">Loading…</div></div>
+</div>
+
+<!-- ── EMPLOYEES ─────────────────────────────────────── -->
+<div id="page-employees" class="page">
+  <div class="page-header">
+    <div><div class="page-title">Employees</div><div class="page-sub" id="emp-count"></div></div>
+  </div>
+  <div class="panel" style="padding:0">
+    <div class="table-wrap" id="emp-table"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ TOAST ═════════════════════════════════════════════════ -->
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- ══ MODALS ════════════════════════════════════════════════ -->
+
+<!-- Customer Modal -->
+<div class="modal-overlay" id="m-customer">
+<div class="modal">
+  <div class="modal-header">
+    <span class="modal-title">Add New Customer</span>
+    <button class="modal-close" onclick="closeModal('m-customer')">✕</button>
+  </div>
+  <div id="m-cust-alert"></div>
+  <div class="form-row">
+    <div class="form-group"><label>Full Name *</label><input id="c-name" placeholder="Priya Sharma" /></div>
+    <div class="form-group"><label>Phone *</label><input id="c-phone" placeholder="9876543210" /></div>
+  </div>
+  <div class="form-group"><label>Email *</label><input id="c-email" type="email" placeholder="priya@email.com" /></div>
+  <div class="form-group"><label>Address *</label><input id="c-addr" placeholder="12 MG Road, Bengaluru" /></div>
+  <div class="form-row">
+    <div class="form-group"><label>Date of Birth *</label><input id="c-dob" type="date" /></div>
+    <div class="form-group"><label>Gender *</label>
+      <select id="c-gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="closeModal('m-customer')">Cancel</button>
+    <button class="btn btn-primary" onclick="submitCustomer()">Add Customer</button>
+  </div>
+</div>
+</div>
+
+<!-- Account Modal -->
+<div class="modal-overlay" id="m-account">
+<div class="modal">
+  <div class="modal-header">
+    <span class="modal-title">Open New Account</span>
+    <button class="modal-close" onclick="closeModal('m-account')">✕</button>
+  </div>
+  <div id="m-acc-alert"></div>
+  <div class="form-group"><label>Customer *</label><select id="a-cust"></select></div>
+  <div class="form-row">
+    <div class="form-group"><label>Branch *</label><select id="a-branch"></select></div>
+    <div class="form-group"><label>Account Type *</label>
+      <select id="a-type" onchange="updateMinDep()">
+        <option value="Savings">Savings (min ₹500)</option>
+        <option value="Current">Current (min ₹1000)</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Initial Deposit (₹) *</label>
+    <input id="a-dep" type="number" placeholder="500" min="500" />
+    <small id="a-dep-hint" style="color:var(--text3);font-size:11px">Minimum ₹500 for Savings</small>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="closeModal('m-account')">Cancel</button>
+    <button class="btn btn-primary" onclick="submitAccount()">Open Account</button>
+  </div>
+</div>
+</div>
+
+<!-- Transaction Modal -->
+<div class="modal-overlay" id="m-txn">
+<div class="modal">
+  <div class="modal-header">
+    <span class="modal-title" id="txn-modal-title">Transaction</span>
+    <button class="modal-close" onclick="closeModal('m-txn')">✕</button>
+  </div>
+  <div class="txn-tabs">
+    <button class="txn-tab active" id="tab-deposit"    onclick="switchTxnTab('Deposit')">💰 Deposit</button>
+    <button class="txn-tab"        id="tab-withdrawal" onclick="switchTxnTab('Withdrawal')">💸 Withdraw</button>
+    <button class="txn-tab"        id="tab-transfer"   onclick="switchTxnTab('Transfer')">⇄ Transfer</button>
+  </div>
+  <div id="m-txn-alert"></div>
+  <div class="form-group">
+    <label id="txn-acc-label">Account *</label>
+    <select id="txn-acc"></select>
+  </div>
+  <div class="form-group" id="txn-to-wrap" style="display:none">
+    <label>To Account *</label>
+    <select id="txn-to-acc"></select>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Amount (₹) *</label><input id="txn-amt" type="number" placeholder="1000" min="1" /></div>
+    <div class="form-group"><label>Description</label><input id="txn-desc" placeholder="e.g. Salary, Bill..." /></div>
+  </div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="closeModal('m-txn')">Cancel</button>
+    <button class="btn btn-primary" id="txn-submit-btn" onclick="submitTxn()">Process</button>
+  </div>
+</div>
+</div>
+
+<!-- Loan Modal -->
+<div class="modal-overlay" id="m-loan">
+<div class="modal">
+  <div class="modal-header">
+    <span class="modal-title">Add Loan</span>
+    <button class="modal-close" onclick="closeModal('m-loan')">✕</button>
+  </div>
+  <div id="m-loan-alert"></div>
+  <div class="form-group"><label>Customer *</label><select id="l-cust"></select></div>
+  <div class="form-row">
+    <div class="form-group"><label>Loan Type *</label>
+      <select id="l-type"><option>Personal</option><option>Home</option><option>Auto</option><option>Education</option><option>Business</option></select>
+    </div>
+    <div class="form-group"><label>Principal (₹) *</label><input id="l-principal" type="number" placeholder="100000" /></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Interest Rate (% p.a.) *</label><input id="l-rate" type="number" step="0.1" placeholder="10.5" /></div>
+    <div class="form-group"><label>Duration (Months) *</label><input id="l-dur" type="number" placeholder="36" /></div>
+  </div>
+  <div class="form-group"><label>Start Date</label><input id="l-date" type="date" /></div>
+  <div id="l-emi-preview" style="display:none;background:#eef4ff;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--blue)"></div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+    <button class="btn btn-ghost" onclick="closeModal('m-loan')">Cancel</button>
+    <button class="btn btn-primary" onclick="submitLoan()">Add Loan</button>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════════
+const API = 'http://localhost:3000/api';
+let adminUser = null;
+let allAccounts = [];
+let currentTxnType = 'Deposit';
+let customerCache = [];
+let branchCache = [];
+
+// ══════════════════════════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════════════════════════
+function toast(msg, ok=true) {
+  const w = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = `toast ${ok?'ok':'err'}`;
+  t.textContent = (ok?'✔ ':'✖ ') + msg;
+  w.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='.3s'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+// ══════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════
+async function doLogin() {
+  const username = document.getElementById('li-user').value.trim();
+  const password = document.getElementById('li-pass').value;
+  const errEl = document.getElementById('login-err');
+  errEl.style.display = 'none';
+
+  try {
+    const r = await api('POST', '/auth/login', { username, password });
+    if (!r.ok) throw new Error(r.message);
+    adminUser = r.admin;
+    document.getElementById('admin-name').textContent = adminUser.name;
+    document.getElementById('admin-initials').textContent =
+      adminUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    navigate('dashboard');
+  } catch(e) {
+    errEl.className = 'alert alert-error';
+    errEl.textContent = e.message;
+    errEl.style.display = 'flex';
+  }
+}
+
+function doLogout() {
+  adminUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Handle Enter key on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+const pageTitles = {
+  dashboard:'Dashboard', customers:'Customers', accounts:'Accounts',
+  transactions:'Transactions', loans:'Loans', employees:'Employees'
+};
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('topbar-title').textContent = pageTitles[page] || page;
+  if (page==='dashboard')    loadDashboard();
+  if (page==='customers')    loadCustomers();
+  if (page==='accounts')     loadAccounts();
+  if (page==='transactions') loadTransactions();
+  if (page==='loans')        loadLoans();
+  if (page==='employees')    loadEmployees();
+}
+
+// ══════════════════════════════════════════════════════════
+//  API helper
+// ══════════════════════════════════════════════════════════
+async function api(method, path, body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API+path, opts);
+  const json = await res.json();
+  return json;
+}
+
+// ══════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════
+const inr = n => '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = d => new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const fmtDayOnly = d => new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+
+function txnBadge(type) {
+  const map = {'Deposit':'badge-green','Withdrawal':'badge-red','Transfer-In':'badge-blue','Transfer-Out':'badge-gold'};
+  return `<span class="badge ${map[type]||'badge-gray'}">${type}</span>`;
+}
+function statusBadge(s) {
+  const map = {Active:'badge-green',Frozen:'badge-red',Closed:'badge-gray',Pending:'badge-gold',Defaulted:'badge-red'};
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function setAlert(id, msg, ok=true) {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${ok?'success':'error'}`;
+  el.textContent = msg;
+  el.style.display = 'flex';
+  if (ok) setTimeout(()=>{ el.style.display='none'; }, 3000);
+}
+function clearAlert(id) { const el=document.getElementById(id); el.style.display='none'; el.textContent=''; }
+
+// ══════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════
+async function loadDashboard() {
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  try {
+    const r = await api('GET', '/stats');
+    if (!r.ok) return;
+    const d = r.data;
+    document.getElementById('s-customers').textContent = d.customers;
+    document.getElementById('s-accounts').textContent  = d.accounts;
+    document.getElementById('s-balance').textContent   = inr(d.total_balance);
+    document.getElementById('s-loans').textContent     = d.active_loans;
+
+    // Recent txns table
+    document.getElementById('recent-txns').innerHTML = d.recent.length
+      ? `<table><thead><tr><th>Account</th><th>Customer</th><th>Type</th><th>Amount</th><th>Date</th></tr></thead><tbody>
+         ${d.recent.map(t=>`<tr>
+           <td>#${t.account_id}</td><td>${t.customer_name}</td>
+           <td>${txnBadge(t.txn_type)}</td>
+           <td class="${t.txn_type==='Deposit'||t.txn_type==='Transfer-In'?'txn-credit':'txn-debit'}">${t.txn_type.includes('In')||t.txn_type==='Deposit'?'+':'−'}${inr(t.amount)}</td>
+           <td style="font-size:12px;color:var(--text3)">${fmtDate(t.txn_date)}</td>
+         </tr>`).join('')}</tbody></table>` : '<div class="empty-state"><div class="ei">📭</div><p>No transactions yet.</p></div>';
+
+    // Activity feed
+    document.getElementById('dash-activity').innerHTML = d.recent.length
+      ? d.recent.slice(0,6).map(t=>`
+        <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;background:${t.txn_type==='Deposit'||t.txn_type==='Transfer-In'?'var(--teal)':'var(--red)'}"></div>
+          <div>
+            <div style="font-size:13px;color:var(--text)">${t.txn_type==='Deposit'?'Deposited':'txn_type'==='Withdrawal'?'Withdrew':t.txn_type} <strong>${inr(t.amount)}</strong> — ${t.customer_name}</div>
+            <div style="font-size:11px;color:var(--text3)">${fmtDate(t.txn_date)} · ${t.description}</div>
+          </div>
+        </div>`).join('')
+      : '<div class="empty-state"><p>No activity today.</p></div>';
+  } catch(e) { toast('Failed to load dashboard stats', false); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  CUSTOMERS
+// ══════════════════════════════════════════════════════════
+async function loadCustomers(search='') {
+  const url = search ? `/customers?search=${encodeURIComponent(search)}` : '/customers';
+  try {
+    const r = await api('GET', url);
+    customerCache = r.data || [];
+    document.getElementById('cust-count').textContent = `${customerCache.length} customers registered`;
+    renderCustomers(customerCache);
+  } catch(e) { document.getElementById('cust-table').innerHTML = '<div class="loading">Error loading data.</div>'; }
+}
+
+function renderCustomers(list) {
+  document.getElementById('cust-table').innerHTML = list.length
+    ? `<table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>DOB</th><th>Joined</th></tr></thead><tbody>
+       ${list.map(c=>`<tr>
+         <td><span class="badge badge-gray">#${c.customer_id}</span></td>
+         <td>${c.full_name}</td><td>${c.email}</td><td>${c.phone}</td>
+         <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.address}</td>
+         <td>${fmtDayOnly(c.dob)}</td>
+         <td style="font-size:12px;color:var(--text3)">${fmtDayOnly(c.created_at)}</td>
+       </tr>`).join('')}</tbody></table>`
+    : '<div class="empty-state"><div class="ei">👥</div><p>No customers found.</p></div>';
+}
+
+let searchTimer;
+function searchCustomers(v) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(()=>loadCustomers(v), 300);
+}
+
+function openCustomerModal() {
+  ['c-name','c-phone','c-email','c-addr','c-dob'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('c-gender').value='';
+  clearAlert('m-cust-alert');
+  openModal('m-customer');
+}
+
+async function submitCustomer() {
+  const body = {
+    full_name: document.getElementById('c-name').value.trim(),
+    phone:     document.getElementById('c-phone').value.trim(),
+    email:     document.getElementById('c-email').value.trim(),
+    address:   document.getElementById('c-addr').value.trim(),
+    dob:       document.getElementById('c-dob').value,
+    gender:    document.getElementById('c-gender').value,
+  };
+  if (!body.full_name||!body.phone||!body.email||!body.address||!body.dob||!body.gender)
+    return setAlert('m-cust-alert','Please fill all required fields.', false);
+  try {
+    const r = await api('POST','/customers',body);
+    if (!r.ok) return setAlert('m-cust-alert', r.message, false);
+    setAlert('m-cust-alert', `Customer added (ID: ${r.customer_id})`);
+    toast('Customer added successfully!');
+    setTimeout(()=>{ closeModal('m-customer'); loadCustomers(); }, 1200);
+  } catch(e) { setAlert('m-cust-alert', e.message, false); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  ACCOUNTS
+// ══════════════════════════════════════════════════════════
+async function loadAccounts(search='') {
+  const url = search ? `/accounts?search=${encodeURIComponent(search)}` : '/accounts';
+  try {
+    const r = await api('GET', url);
+    allAccounts = r.data || [];
+    document.getElementById('acc-count').textContent = `${allAccounts.length} accounts`;
+    renderAccounts(allAccounts);
+  } catch(e) {}
+}
+
+function renderAccounts(list) {
+  document.getElementById('acc-table').innerHTML = list.length
+    ? `<table><thead><tr><th>Acc #</th><th>Customer</th><th>Type</th><th>Balance</th><th>Branch</th><th>Status</th><th>Opened</th><th>Actions</th></tr></thead><tbody>
+       ${list.map(a=>`<tr>
+         <td><span class="badge badge-blue">#${a.account_id}</span></td>
+         <td>${a.customer_name}<div style="font-size:11px;color:var(--text3)">${a.customer_phone}</div></td>
+         <td><span class="badge badge-gray">${a.account_type}</span></td>
+         <td style="font-weight:700;color:var(--teal)">${inr(a.balance)}</td>
+         <td>${a.branch_name}<div style="font-size:11px;color:var(--text3)">${a.city}</div></td>
+         <td>${statusBadge(a.status)}</td>
+         <td style="font-size:12px;color:var(--text3)">${fmtDayOnly(a.opened_date)}</td>
+         <td><div style="display:flex;gap:4px">
+           <button class="btn btn-success btn-sm" onclick="openTxnModal('Deposit','${a.account_id}')">+</button>
+           <button class="btn btn-ghost btn-sm"   onclick="openTxnModal('Withdrawal','${a.account_id}')">−</button>
+           <button class="btn btn-primary btn-sm" onclick="viewAccountTxns(${a.account_id})">Txns</button>
+         </div></td>
+       </tr>`).join('')}</tbody></table>`
+    : '<div class="empty-state"><div class="ei">🏦</div><p>No accounts found.</p></div>';
+}
+
+let accSearchTimer;
+function searchAccounts(v) {
+  clearTimeout(accSearchTimer);
+  accSearchTimer = setTimeout(()=>loadAccounts(v), 300);
+}
+
+async function openAccountModal() {
+  clearAlert('m-acc-alert');
+  // Load customers and branches
+  if (!customerCache.length) { const r = await api('GET','/customers'); customerCache = r.data||[]; }
+  if (!branchCache.length)   { const r = await api('GET','/branches');  branchCache  = r.data||[]; }
+  document.getElementById('a-cust').innerHTML = customerCache.map(c=>`<option value="${c.customer_id}">${c.full_name} (${c.phone})</option>`).join('');
+  document.getElementById('a-branch').innerHTML = branchCache.map(b=>`<option value="${b.branch_id}">${b.branch_name} - ${b.city}</option>`).join('');
+  document.getElementById('a-dep').value = '';
+  document.getElementById('a-type').value = 'Savings';
+  updateMinDep();
+  openModal('m-account');
+}
+
+function updateMinDep() {
+  const t = document.getElementById('a-type').value;
+  const min = t==='Savings'?500:1000;
+  document.getElementById('a-dep').min = min;
+  document.getElementById('a-dep-hint').textContent = `Minimum ₹${min} for ${t}`;
+}
+
+async function submitAccount() {
+  const body = {
+    customer_id:     document.getElementById('a-cust').value,
+    branch_id:       document.getElementById('a-branch').value,
+    account_type:    document.getElementById('a-type').value,
+    initial_deposit: parseFloat(document.getElementById('a-dep').value),
+  };
+  if (!body.initial_deposit || body.initial_deposit <= 0)
+    return setAlert('m-acc-alert','Enter a valid initial deposit.', false);
+  try {
+    const r = await api('POST','/accounts',body);
+    if (!r.ok) return setAlert('m-acc-alert', r.message, false);
+    setAlert('m-acc-alert', r.message);
+    toast('Account opened!');
+    setTimeout(()=>{ closeModal('m-account'); loadAccounts(); }, 1200);
+  } catch(e) { setAlert('m-acc-alert', e.message, false); }
+}
+
+function viewAccountTxns(accId) {
+  navigate('transactions');
+  setTimeout(()=>loadTransactions(accId), 200);
+}
+
+// ══════════════════════════════════════════════════════════
+//  TRANSACTIONS
+// ══════════════════════════════════════════════════════════
+async function loadTransactions(accountId=null) {
+  const url = accountId ? `/transactions?account_id=${accountId}&limit=100` : '/transactions?limit=100';
+  try {
+    const r = await api('GET', url);
+    const txns = r.data || [];
+    document.getElementById('txn-table').innerHTML = txns.length
+      ? `<table><thead><tr><th>ID</th><th>Account</th><th>Customer</th><th>Type</th><th>Amount</th><th>Balance After</th><th>Description</th><th>Date</th></tr></thead><tbody>
+         ${txns.map(t=>`<tr>
+           <td style="font-size:12px;color:var(--text3)">#${t.txn_id}</td>
+           <td><span class="badge badge-blue">#${t.account_id}</span></td>
+           <td>${t.customer_name}</td>
+           <td>${txnBadge(t.txn_type)}</td>
+           <td class="${t.txn_type==='Deposit'||t.txn_type==='Transfer-In'?'txn-credit':'txn-debit'}">
+             ${t.txn_type==='Deposit'||t.txn_type==='Transfer-In'?'+':'−'}${inr(t.amount)}</td>
+           <td style="font-weight:600">${inr(t.balance_after)}</td>
+           <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${t.description}</td>
+           <td style="font-size:12px;color:var(--text3);white-space:nowrap">${fmtDate(t.txn_date)}</td>
+         </tr>`).join('')}</tbody></table>`
+      : '<div class="empty-state"><div class="ei">💸</div><p>No transactions found.</p></div>';
+  } catch(e) {}
+}
+
+async function openTxnModal(type, presetAccId=null) {
+  currentTxnType = type;
+  clearAlert('m-txn-alert');
+  // Reload accounts
+  const r = await api('GET','/accounts');
+  allAccounts = r.data || [];
+  const opts = allAccounts.map(a=>`<option value="${a.account_id}">#${a.account_id} — ${a.customer_name} (${inr(a.balance)})</option>`).join('');
+  document.getElementById('txn-acc').innerHTML = opts;
+  document.getElementById('txn-to-acc').innerHTML = opts;
+  if (presetAccId) document.getElementById('txn-acc').value = presetAccId;
+  document.getElementById('txn-to-wrap').style.display = type==='Transfer'?'block':'none';
+  document.getElementById('txn-amt').value = '';
+  document.getElementById('txn-desc').value = '';
+  switchTxnTab(type);
+  openModal('m-txn');
+}
+
+function switchTxnTab(type) {
+  currentTxnType = type;
+  ['deposit','withdrawal','transfer'].forEach(t=>{
+    document.getElementById(`tab-${t}`)?.classList.toggle('active', t===type.toLowerCase());
+  });
+  document.getElementById('txn-modal-title').textContent = type;
+  document.getElementById('txn-to-wrap').style.display = type==='Transfer'?'block':'none';
+  const btnMap = {Deposit:'Deposit',Withdrawal:'Withdraw',Transfer:'Transfer'};
+  document.getElementById('txn-submit-btn').textContent = btnMap[type];
+}
+
+async function submitTxn() {
+  const acc   = document.getElementById('txn-acc').value;
+  const amt   = parseFloat(document.getElementById('txn-amt').value);
+  const desc  = document.getElementById('txn-desc').value;
+  const toAcc = document.getElementById('txn-to-acc').value;
+
+  if (!acc || !amt || amt<=0) return setAlert('m-txn-alert','Select account and enter valid amount.', false);
+  if (currentTxnType==='Transfer' && !toAcc) return setAlert('m-txn-alert','Select destination account.', false);
+
+  const endpoints = {Deposit:'/transactions/deposit',Withdrawal:'/transactions/withdraw',Transfer:'/transactions/transfer'};
+  const bodies = {
+    Deposit:    {account_id:+acc, amount:amt, description:desc},
+    Withdrawal: {account_id:+acc, amount:amt, description:desc},
+    Transfer:   {from_account:+acc, to_account:+toAcc, amount:amt, description:desc},
+  };
+
+  try {
+    const r = await api('POST', endpoints[currentTxnType], bodies[currentTxnType]);
+    if (!r.ok) return setAlert('m-txn-alert', r.message.replace('ERROR: ',''), false);
+    setAlert('m-txn-alert', r.message.replace('SUCCESS: ',''));
+    toast(r.message.replace('SUCCESS: ',''));
+    setTimeout(()=>{ closeModal('m-txn'); loadTransactions(); loadDashboard(); loadAccounts(); }, 1500);
+  } catch(e) { setAlert('m-txn-alert', e.message, false); }
+}
+
+// ══════════════════════════════════════════════════════════
+//  LOANS
+// ══════════════════════════════════════════════════════════
+async function loadLoans() {
+  try {
+    const r = await api('GET','/loans');
+    const loans = r.data || [];
+    document.getElementById('loan-count').textContent = `${loans.length} loan records`;
+    if (!loans.length) {
+      document.getElementById('loan-cards').innerHTML = '<div class="empty-state"><div class="ei">💼</div><p>No loans found.</p></div>';
+      return;
+    }
+    document.getElementById('loan-cards').innerHTML = `<div class="loan-grid">
+      ${loans.map(l=>{
+        const pct = Math.min(100, Math.round((l.status==='Closed'?100:10)));
+        const colorMap = {Personal:'badge-blue',Home:'badge-green',Auto:'badge-gold',Education:'badge-red',Business:'badge-gray'};
+        return `<div class="loan-card">
+          <div class="loan-card-header">
+            <div>
+              <div class="loan-name">${l.customer_name}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px">Loan #${l.loan_id}</div>
+            </div>
+            <div>
+              <span class="loan-type-badge">${l.loan_type}</span><br>
+              <div style="margin-top:4px">${statusBadge(l.status)}</div>
+            </div>
+          </div>
+          <div class="loan-meta">
+            <div class="loan-meta-item"><label>Principal</label><span style="color:var(--navy)">${inr(l.principal)}</span></div>
+            <div class="loan-meta-item"><label>Monthly EMI</label><span style="color:var(--blue)">${inr(l.emi)}</span></div>
+            <div class="loan-meta-item"><label>Interest Rate</label><span>${l.interest_rate}% p.a.</span></div>
+            <div class="loan-meta-item"><label>Duration</label><span>${l.duration_months} months</span></div>
+            <div class="loan-meta-item"><label>Total Repay</label><span>${inr(l.total_repayment)}</span></div>
+            <div class="loan-meta-item"><label>Interest Paid</label><span style="color:var(--red)">${inr(l.total_interest)}</span></div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+            ${l.status==='Pending'  ? `<button class="btn btn-success btn-sm" onclick="updateLoanStatus(${l.loan_id},'Active')">Approve</button>` : ''}
+            ${l.status==='Active'   ? `<button class="btn btn-ghost btn-sm"   onclick="updateLoanStatus(${l.loan_id},'Closed')">Mark Closed</button>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  } catch(e) {}
+}
+
+async function openLoanModal() {
+  clearAlert('m-loan-alert');
+  if (!customerCache.length) { const r = await api('GET','/customers'); customerCache = r.data||[]; }
+  document.getElementById('l-cust').innerHTML = customerCache.map(c=>`<option value="${c.customer_id}">${c.full_name}</option>`).join('');
+  ['l-principal','l-rate','l-dur'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('l-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('l-emi-preview').style.display = 'none';
+
+  // Preview EMI on input
+  ['l-principal','l-rate','l-dur'].forEach(id=>{
+    document.getElementById(id).oninput = previewEMI;
+  });
+  openModal('m-loan');
+}
+
+function previewEMI() {
+  const P = parseFloat(document.getElementById('l-principal').value);
+  const r = parseFloat(document.getElementById('l-rate').value) / 12 / 100;
+  const n = parseInt(document.getElementById('l-dur').value);
+  if (P>0 && r>0 && n>0) {
+    const emi = P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+    const total = emi * n;
+    const el = document.getElementById('l-emi-preview');
+    el.style.display = 'block';
+    el.innerHTML = `💡 Estimated EMI: <strong>₹${emi.toFixed(2)}/month</strong> &nbsp;|&nbsp; Total Repayment: <strong>₹${total.toFixed(2)}</strong>`;
+  }
+}
+
+async function submitLoan() {
+  const body = {
+    customer_id:     document.getElementById('l-cust').value,
+    loan_type:       document.getElementById('l-type').value,
+    principal:       parseFloat(document.getElementById('l-principal').value),
+    interest_rate:   parseFloat(document.getElementById('l-rate').value),
+    duration_months: parseInt(document.getElementById('l-dur').value),
+    start_date:      document.getElementById('l-date').value,
+  };
+  if (!body.principal||!body.interest_rate||!body.duration_months)
+    return setAlert('m-loan-alert','Please fill all required fields.', false);
+  try {
+    const r = await api('POST','/loans',body);
+    if (!r.ok) return setAlert('m-loan-alert', r.message, false);
+    setAlert('m-loan-alert', r.message);
+    toast(`Loan added! EMI: ₹${r.loan?.emi}`);
+    setTimeout(()=>{ closeModal('m-loan'); loadLoans(); }, 1500);
+  } catch(e) { setAlert('m-loan-alert', e.message, false); }
+}
+
+async function updateLoanStatus(loanId, status) {
+  const r = await api('PUT', `/loans/${loanId}/status`, { status });
+  toast(r.message, r.ok);
+  if (r.ok) loadLoans();
+}
+
+// ══════════════════════════════════════════════════════════
+//  EMPLOYEES
+// ══════════════════════════════════════════════════════════
+async function loadEmployees() {
+  try {
+    const r = await api('GET','/employees');
+    const emps = r.data || [];
+    document.getElementById('emp-count').textContent = `${emps.length} employees`;
+    document.getElementById('emp-table').innerHTML = emps.length
+      ? `<table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Salary</th><th>Branch</th><th>Joined</th></tr></thead><tbody>
+         ${emps.map(e=>`<tr>
+           <td><span class="badge badge-gray">#${e.employee_id}</span></td>
+           <td>${e.employee_name}</td><td>${e.email}</td><td>${e.phone}</td>
+           <td><span class="badge badge-blue">${e.role}</span></td>
+           <td style="font-weight:700;color:var(--navy)">${inr(e.salary)}</td>
+           <td>${e.branch_name}<div style="font-size:11px;color:var(--text3)">${e.city}</div></td>
+           <td style="font-size:12px;color:var(--text3)">${fmtDayOnly(e.joined_date)}</td>
+         </tr>`).join('')}</tbody></table>`
+      : '<div class="empty-state"><div class="ei">👔</div><p>No employees found.</p></div>';
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════
+//  CLOSE MODAL ON OVERLAY CLICK
+// ══════════════════════════════════════════════════════════
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
