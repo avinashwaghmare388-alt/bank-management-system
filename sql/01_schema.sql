@@ -1,13 +1,10 @@
--- ============================================================
---  BANK MANAGEMENT SYSTEM  |  schema.sql
---  Run this file FIRST in MySQL Workbench
--- ============================================================
+-
 
 DROP DATABASE IF EXISTS bank_db;
 CREATE DATABASE bank_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE bank_db;
 
--- ── 1. BRANCHES ──────────────────────────────────────────────
+
 CREATE TABLE branches (
     branch_id     INT           NOT NULL AUTO_INCREMENT,
     branch_name   VARCHAR(100)  NOT NULL,
@@ -19,7 +16,7 @@ CREATE TABLE branches (
     PRIMARY KEY (branch_id)
 );
 
--- ── 2. CUSTOMERS ─────────────────────────────────────────────
+
 CREATE TABLE customers (
     customer_id   INT           NOT NULL AUTO_INCREMENT,
     full_name     VARCHAR(100)  NOT NULL,
@@ -32,7 +29,7 @@ CREATE TABLE customers (
     PRIMARY KEY (customer_id)
 );
 
--- ── 3. EMPLOYEES ─────────────────────────────────────────────
+
 CREATE TABLE employees (
     employee_id   INT           NOT NULL AUTO_INCREMENT,
     branch_id     INT           NOT NULL,
@@ -48,7 +45,7 @@ CREATE TABLE employees (
         REFERENCES branches(branch_id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- ── 4. ACCOUNTS ──────────────────────────────────────────────
+
 CREATE TABLE accounts (
     account_id      INT             NOT NULL AUTO_INCREMENT,
     customer_id     INT             NOT NULL,
@@ -69,7 +66,7 @@ CREATE TABLE accounts (
         REFERENCES branches(branch_id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- ── 5. TRANSACTIONS ──────────────────────────────────────────
+
 CREATE TABLE transactions (
     txn_id          INT             NOT NULL AUTO_INCREMENT,
     account_id      INT             NOT NULL,
@@ -84,7 +81,7 @@ CREATE TABLE transactions (
         REFERENCES accounts(account_id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- ── 6. LOANS ─────────────────────────────────────────────────
+
 CREATE TABLE loans (
     loan_id         INT             NOT NULL AUTO_INCREMENT,
     customer_id     INT             NOT NULL,
@@ -101,7 +98,7 @@ CREATE TABLE loans (
         REFERENCES customers(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- ── 7. ADMIN LOGIN ───────────────────────────────────────────
+
 CREATE TABLE admin_login (
     admin_id      INT           NOT NULL AUTO_INCREMENT,
     username      VARCHAR(50)   NOT NULL UNIQUE,
@@ -113,7 +110,7 @@ CREATE TABLE admin_login (
     PRIMARY KEY (admin_id)
 );
 
--- ── INDEXES ──────────────────────────────────────────────────
+
 CREATE INDEX idx_accounts_customer   ON accounts(customer_id);
 CREATE INDEX idx_accounts_branch     ON accounts(branch_id);
 CREATE INDEX idx_transactions_account ON transactions(account_id);
